@@ -1,0 +1,37 @@
+{
+  "generator-jhipster": {
+    "promptValues": {
+      "packageName": "com.trial"
+    },
+    "jhipsterVersion": "6.4.1",
+    "applicationType": "microservice",
+    "baseName": "test345",
+    "packageName": "com.trial",
+    "packageFolder": "com/trial",
+    "serverPort": "8080",
+    "authenticationType": "jwt",
+    "cacheProvider": "ehcache",
+    "enableHibernateCache": false,
+    "websocket": false,
+    "databaseType": "sql",
+    "devDatabaseType": "h2Memory",
+    "prodDatabaseType": "mysql",
+    "searchEngine": false,
+    "messageBroker": false,
+    "serviceDiscoveryType": false,
+    "buildTool": "maven",
+    "enableSwaggerCodegen": false,
+    "jwtSecretKey": "MzJjNmIxMWIyZDYyZTY5NzBhZGQyZDFkYzE5N2YwZDg3MjY1NWFhZThiNDc3ZGM3OTMyN2Q5ZDhkMDZkNzM2NTJhNTIzYTgxZGMxY2RiNWZiYzQ1NDY4ZDI4M2IxYWZhNWUxYTIyZGUzNGZkZDhkMGYxZWU1MDNmZDA3NzdiZTM=",
+    "embeddableLaunchScript": false,
+    "testFrameworks": [],
+    "jhiPrefix": "jhi",
+    "entitySuffix": "",
+    "dtoSuffix": "DTO",
+    "otherModules": [],
+    "enableTranslation": false,
+    "clientPackageManager": "npm",
+    "blueprints": [],
+    "skipClient": true,
+    "skipUserManagement": true
+  }
+}

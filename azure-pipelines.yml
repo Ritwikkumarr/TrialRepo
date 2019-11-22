@@ -1,0 +1,113 @@
+ 
+trigger:
+- develop
+
+resources:
+- repo: self
+
+variables:
+    ACR.Name: 'demodev'
+    ACR.RepositoryName: 'trialrepoDev'
+    ACR.ServiceName: '$(ACR.Name)-service' 
+    AKS.KubeDeploymentYaml: 'AKS-deployment.yaml'
+    AKS.KubeServiceYaml: 'AKS-service.yaml'
+    AKS.DeploymentPort: 8080 
+    ACR.ImageName: '$(ACR.Name):$(Build.BuildId)'
+    ACR.ContainerRegistry: 'mapacr'
+    ACR.FullName: '$(ACR.ContainerRegistry).azurecr.io'
+  
+
+
+stages:
+    
+- stage: Build
+  displayName: Build stage
+  jobs:  
+  - job: Build
+    displayName: Build job
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: Docker@2
+      displayName: Build and push an image to container registry
+      inputs:
+        command: buildAndPush
+        repository: $(ACR.Name)
+        dockerfile: '**/Dockerfile'
+        containerRegistry: 'MAPACR'
+        tag: $(Build.BuildId)
+
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: '$(Agent.BuildDirectory)'
+        Contents: '**'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    
+                               
+    - bash: |
+    
+       echo "apiVersion : apps/v1beta1
+       kind: Deployment
+       metadata:
+         name: $(ACR.Name)
+       spec:
+         replicas: 1
+         template:
+           metadata:
+             labels:
+               app: $(ACR.Name)
+           spec:
+             containers:
+             - name: $(ACR.Name)
+               image: $(ACR.FullName)/$(ACR.ImageName)
+               ports:
+               - containerPort: $(AKS.DeploymentPort)
+             imagePullSecrets:
+               - name: mapacrsecret" > '$(Build.ArtifactStagingDirectory)/$(AKS.KubeDeploymentYaml)'
+      displayName: 'Generate kubernetes deployment yaml'
+      
+    - bash: |
+    
+       echo "apiVersion: v1
+       kind: Service
+       metadata:
+         name: $(ACR.ServiceName)
+       spec:
+         type: LoadBalancer
+         ports:
+         - port: $(AKS.DeploymentPort)
+         selector:
+           app: $(ACR.Name)" > '$(Build.ArtifactStagingDirectory)/$(AKS.KubeServiceYaml)'
+      displayName: 'Generate kubernetes service yaml'
+
+    
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'drop'
+        publishLocation: 'Container'
+
+    - task: Kubernetes@1
+      displayName: kubectl apply
+      inputs:
+            connectionType: Kubernetes Service Connection
+            kubernetesServiceEndpoint: MAPAKSCluster
+            command: apply
+            namespace: default
+            manifests: |
+                      $(Build.ArtifactStagingDirectory)/$(AKS.KubeDeploymentYaml)
+            arguments: '-f $(Build.ArtifactStagingDirectory)/$(AKS.KubeDeploymentYaml)' 
+            
+    - task: Kubernetes@1
+      displayName: kubectl apply
+      inputs:
+            connectionType: Kubernetes Service Connection
+            kubernetesServiceEndpoint: MAPAKSCluster
+            command: apply
+            namespace: default
+            manifests: |
+                      $(System.ArtifactsDirectory)/$(AKS.KubeServiceYaml)
+            arguments: '-f $(Build.ArtifactStagingDirectory)/$(AKS.KubeServiceYaml)' 
+                
+  
+   
